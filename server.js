@@ -2,9 +2,7 @@
  * PDF Parser Microservice
  * Accepts raw PDF bytes and returns parsed JSON
  */
-app.get("/parse", (req, res) => {
-  res.send("PARSE ROUTE EXISTS");
-});
+
 
 
 const express = require("express");
@@ -24,6 +22,9 @@ app.use(
   })
 );
 
+app.get("/parse", (req, res) => {
+  res.send("PARSE ROUTE EXISTS");
+});
 /**
  * Health check endpoint
  */
