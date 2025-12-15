@@ -1,44 +1,66 @@
+/**
+ * PDF Parser Microservice
+ * Accepts raw PDF bytes and returns parsed JSON
+ */
+
 const express = require("express");
-const multer = require("multer");
-const fs = require("fs");
-const parsePDF = require("./parser");
+const bodyParser = require("body-parser");
+const { parsePDFBuffer } = require("./parser");
 
 const app = express();
 
-// Multer config: store uploaded PDFs temporarily
-const upload = multer({
-  dest: "uploads/",
-  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
-});
+/**
+ * Accept raw PDF data sent with:
+ * Content-Type: application/pdf
+ */
+app.use(
+  bodyParser.raw({
+    type: "application/pdf",
+    limit: "5mb"
+  })
+);
 
-// Health check (optional but useful)
+/**
+ * Health check endpoint
+ */
 app.get("/", (req, res) => {
   res.send("PDF Parser Service is running");
 });
 
-// Main PDF parsing endpoint
-app.post("/parse", upload.single("statement"), async (req, res) => {
+/**
+ * Main PDF parsing endpoint
+ */
+app.post("/parse", async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No PDF uploaded" });
+    // Validate PDF body
+    if (!req.body || req.body.length === 0) {
+      return res.status(400).json({
+        error: "No PDF received"
+      });
     }
 
-    const filePath = req.file.path;
+    // PDF data as Buffer
+    const pdfBuffer = req.body;
 
-    const result = await parsePDF(filePath);
+    // Parse PDF
+    const result = await parsePDFBuffer(pdfBuffer);
 
-    // Delete PDF after parsing
-    fs.unlinkSync(filePath);
-
+    // Send parsed JSON
     res.json(result);
-  } catch (err) {
-    console.error("PARSER ERROR:", err.message);
-    res.status(400).json({ error: err.message });
+
+  } catch (error) {
+    console.error("PARSER ERROR:", error.message);
+    res.status(400).json({
+      error: error.message
+    });
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
+/**
+ * Start server
+ * Render provides PORT via environment variable
+ */
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`PDF Parser running on port ${PORT}`);
 });
