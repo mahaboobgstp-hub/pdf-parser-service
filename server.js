@@ -15,7 +15,7 @@ const app = express();
  */
 app.use(
   bodyParser.raw({
-    type: "application/pdf",
+    type: "*/*",
     limit: "5mb"
   })
 );
@@ -32,27 +32,24 @@ app.get("/", (req, res) => {
  */
 app.post("/parse", async (req, res) => {
   try {
-    // Validate PDF body
+    console.log(
+      "RENDER /parse HIT | content-type:",
+      req.headers["content-type"],
+      "| bytes:",
+      req.body ? req.body.length : "NO BODY"
+    );
+
     if (!req.body || req.body.length === 0) {
-      return res.status(400).json({
-        error: "No PDF received"
-      });
+      return res.status(400).json({ error: "No PDF received" });
     }
 
-    // PDF data as Buffer
-    const pdfBuffer = req.body;
+    const buffer = req.body;
+    const result = await parsePDFBuffer(buffer);
 
-    // Parse PDF
-    const result = await parsePDFBuffer(pdfBuffer);
-
-    // Send parsed JSON
     res.json(result);
-
-  } catch (error) {
-    console.error("PARSER ERROR:", error.message);
-    res.status(400).json({
-      error: error.message
-    });
+  } catch (err) {
+    console.error("PARSER ERROR:", err);
+    res.status(400).json({ error: err.message });
   }
 });
 
